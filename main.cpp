@@ -42,6 +42,6 @@ int main(){
         }
     }while(ch != 'q');//
     ma_sound_uninit(&bgm1Sound);
-    ma_decoder_init_memory();
+    // ma_decoder_init_memory();
     return 0;
 }
