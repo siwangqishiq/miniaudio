@@ -43,8 +43,8 @@ int test2(){
     return 0;
 }
 
-int test1(){
-    ma_result result;
+int test3(){
+     ma_result result;
     ma_engine engine;
 
     ma_sound bgm1Sound;
@@ -55,7 +55,7 @@ int test1(){
         return -1;
     }
     
-    result = ma_sound_init_from_file(&engine, "sound/buttfly.mp3", 0, 
+    result = ma_sound_init_from_file(&engine, "sound/renlong.mp3", 0, 
         nullptr, nullptr, &bgm1Sound);
     
     bgm1Sound.endCallback = [](void* pUserData, ma_sound* pSound){
@@ -94,5 +94,73 @@ int test1(){
     }while(ch != 'q');//
     ma_sound_uninit(&bgm1Sound);
     // ma_decoder_init_memory();
+
+    return 0;
+}
+
+void data_callback(ma_device* pDevice, 
+    void* pOutput, 
+    const void* pInput, 
+    ma_uint32 frameCount){
+
+    std::cout << "readPcmFileCount = " << readPcmFileCount <<" frameCount :" << frameCount << std::endl;
+    
+    std::ifstream* pcmFile = (std::ifstream*)pDevice->pUserData;
+    if (!pcmFile->is_open()) {
+        return;
+    }
+
+    // int readPcmFileCount = frameCount * pDevice->playback.channels * ma_get_bytes_per_sample(pDevice->playback.format);
+    // std::cout << "readPcmFileCount = " << readPcmFileCount <<" frameCount :" << frameCount << std::endl;
+    // pcmFile->read((char *)pOutput, 
+    //     frameCount * pDevice->playback.channels * ma_get_bytes_per_sample(pDevice->playback.format));
+    
+    // if (pcmFile->gcount() == 0) {
+    //     ma_device_stop(pDevice);
+    // }
+}
+
+int test_play_pcm(){
+      const char *file = "sound/output_44100_2_s16le.pcm";
+    std::ifstream pcmFile(file, std::ios::binary);
+
+    if (!pcmFile.is_open()) {
+        std::cerr << "open file error: " << file << std::endl;
+        return -1;
+    }
+
+    // 配置播放设备
+    ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
+    deviceConfig.playback.format = ma_format_s16;   // 示例采样格式，16 位有符号
+    deviceConfig.playback.channels = 2;             // 示例通道数，1为单声道，2为立体声
+    deviceConfig.sampleRate = 44100;                // 示例采样率
+    deviceConfig.dataCallback = data_callback;
+    deviceConfig.pUserData = &pcmFile;
+
+    ma_device device;
+    if (ma_device_init(nullptr, &deviceConfig, &device) != MA_SUCCESS) {
+        std::cerr << "init play device error" << std::endl;
+        return -1;
+    }
+
+    if (ma_device_start(&device) != MA_SUCCESS) {
+        std::cerr << "start deivce error" << std::endl;
+        ma_device_uninit(&device);
+        return -1;
+    }
+
+    std::cout << "Playing..." << std::endl;
+    std::cin.get(); // 等待用户按下回车键以停止播放
+
+    // 停止播放并清理
+    ma_device_uninit(&device);
+    pcmFile.close();
+
+    std::cout << "Play Ended." << std::endl;
+
+    return 0;
+}
+
+int main(){
     return 0;
 }
